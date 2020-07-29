@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<html>
+<head>
+  <title>COVID CASES & DEATH COMPARISON BAR CHART</title>
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+  <style>
+    body {
+      font: 12px sans-serif;
+      background-color:beige
+    }
+    
+  </style>
+</head>
+<body>
+  <div style="text-align: center;">
+    <h1>WORLD LEAST 10 COVID-19 IMPACTED COUNTRIES</h1>
+    <div style="text-align: left;">
+    <p>As shown in the below grouped bar chart, one can see the least 10 COVID impacted countries in terms of number of cases and deaths. It can be clearly inferred that there are 10 COVID cases in Western Sahara which is least in comparison to any other country in the world. There are no deaths in 9 of the least 10 COVID impacted countries which is a feeling of sigh in midst of such a pandemic. Western Sahara has 10 confirmed COVID cases out of which there has been 1 death.</p>
+    </div>
+    <p>Cases & Deaths vs Country</p>
+    <div style="text-align: left;"><a href="grouped_bc_top_10.html">
+      <button>Previous</button></div>
+    <div style="text-align: right;"><a href="multiple_line_chart.html">
+        <button>Next</button></div>
+    <svg class="chart" width="950" height="450"></svg>
+    
+  </div>
+<script>
+
+var models = [
+  {
+    "country":"Papua New Guinea",
+    "cases":39,
+    "deaths":0
+  },
+  {
+    "country":"Fiji",
+    "cases":27,
+    "deaths":0
+  },
+  {
+    "country":"Timor-Leste",
+    "cases":24,
+    "deaths":0
+  },
+  {
+    "country":"Saint Lucia",
+    "cases":24,
+    "deaths":0
+  },
+  {
+    "country":"Grenada",
+    "cases":23,
+    "deaths":0
+  },
+  {
+    "country":"Laos",
+    "cases":20,
+    "deaths":0
+  },
+  {
+    "country":"Dominica",
+    "cases":18,
+    "deaths":0
+  },
+  {
+    "country":"Saint Kitts & Nevis",
+    "cases":17,
+    "deaths":0
+  },
+  {
+    "country":"Holy See",
+    "cases":12,
+    "deaths":0
+  },
+  {
+    "country":"Western Sahara",
+    "cases":10,
+    "deaths":1
+  }
+];
+
+var svg = d3.select("svg"),
+    margin = {top: 50, right: 50, bottom: 50, left: 65},
+    width = svg.attr("width") - margin.left - margin.right,
+    height = svg.attr("height") - margin.top - margin.bottom,
+    g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+var y = d3.scaleLinear()
+      .domain([0, 39])
+      .range([height, 0]);
+
+var x0 = d3.scaleBand()  
+      .rangeRound([0, width])
+      .paddingInner(0.1)
+      .paddingOuter(0.1);
+
+var x1 = d3.scaleBand()  
+    // .paddingOuter(0.2)
+    // .paddingInner(0.5);
+
+var z = d3.scaleOrdinal()
+        .range(["steelblue", "green"]);
+
+const yAxis = d3.axisLeft(y);
+
+//examine first object, retrieve the keys, and discard the first key
+//return resulting array of keys
+var subCategories = Object.keys(models[0]).slice(1);
+
+//use new array from just the country values for the bottom x-axis
+x0.domain(models.map( d =>  d.country ));
+
+//array of quarterly value names, fitted in the available bottom countries (x0.bandwidth())
+x1.domain(subCategories).rangeRound([0, x0.bandwidth()])
+
+// Add bar chart
+var selection = g.selectAll("g")
+    .data(models)
+    .enter().append("g")
+    .attr("transform", d => "translate(" + x0(d.country) + ",0)" )
+selection.selectAll("rect")
+    //Use map function with the subCategories array and the models array
+    .data(function(d) { return subCategories.map(function(key) { return {key: key, value: d[key]}; }); })
+    .enter().append("rect")
+    .attr("x", d => x1(d.key) )
+    //If the value is negative, put the top left corner of the rect bar on the zero line
+    .attr("y", d => y(d.value) )
+    .attr("width", x1.bandwidth())
+    .attr("height", d => Math.abs(y(d.value) - y(0)) )
+    .attr("fill", d => z(d.key) )
+    //can not nest the text element inside the rect element !
+    selection.selectAll("text")
+       .data(function(d) { return subCategories.map(function(key) { return {key: key, value: d[key]}; }); })
+        .enter().append("text")
+        .attr("x", d => x1(d.key) )
+    //offset the position of the y value (positive / negative) to have the text over/under the rect bar
+        .attr("y", d => d.value<0 ? y(0) - (y(4) - (Math.abs(y(d.value) - y(0)) + 20)) : y(d.value) - 10)
+        .style('fill', d => z(d.key))
+        //.style('font', '12 px')
+    //make sure one just decimal place is displayed
+        .text(d => Number.parseInt(d.value)).attr("font-family", "sans-serif").attr("font-size", 12);
+
+//add the x-axis
+g.append("g")
+    .attr("class", "axis")
+    .attr("transform", "translate(0," + height + ")")
+    .call(d3.axisBottom(x0))
+    .selectAll(".tick text").attr("font-family", "sans-serif").attr("font-size", 12).style('fill', 'black')
+    //use wrap function to wrap long lines in labels
+    .call(wrap, x0.bandwidth());
+
+g.append('g')
+    .call(yAxis)
+    .selectAll(".tick text").attr("font-family", "sans-serif").attr("font-size", 12)
+    .style('fill', 'black')
+    ;
+
+//identify zero line on the y axis.
+g.append("line")
+    .attr("y1", y(0))
+    .attr("y2", y(0))
+    .attr("x1", 0)
+    .attr("x2", width)
+    .attr("stroke", "black")
+    ;
+
+var legend = g.append("g")
+    .attr("text-anchor","end")
+    .attr("font", "12px sans-serif")
+    .selectAll("g")
+    .data(subCategories)
+    .enter().append("g")
+    .attr("transform", function(d, i) { return "translate(0," + i * 24 + ")"; });
+  legend.append("rect")
+      .attr("x", width - 142)
+      .attr("width", 8)
+      .attr("height", 8)
+      .attr("fill", z);
+  legend.append("text")
+          .attr("x", d => width - 80)
+          .attr("y", 5.5)
+          .attr("dy", "0.22em")
+          .text(d => (d));
+
+  function wrap(text, width) {
+            text.each(function() {
+              var text = d3.select(this),
+                  words = text.text().split(/\s+/).reverse(),
+                  word,
+                  line = [],
+                  lineNumber = 0,
+                  lineHeight = 1.1, // ems
+                  y = text.attr("y"),
+                  dy = parseFloat(text.attr("dy")),
+                  tspan = text.text(null).append("tspan").attr("x", 0).attr("y", y).attr("dy", dy + "em");
+              while (word = words.pop()) {
+                line.push(word);
+                tspan.text(line.join(" "));
+                if (tspan.node().getComputedTextLength() > width) {
+                  line.pop();
+                  tspan.text(line.join(" "));
+                  line = [word];
+                  tspan = text.append("tspan").attr("x", 0).attr("y", y).attr("dy", ++lineNumber * lineHeight + dy + "em").text(word);
+                }
+              }
+            });
+          }
+
+svg.append("g")
+  .append("text")
+  .attr("transform", "translate("+ (10/2) +","+(355/2)+")rotate(-90)")
+  .attr("y", 6)
+  .attr("dy", ".71em")
+  .style("text-anchor", "end")
+  .text("Cases & Deaths");
+
+svg.append("g")
+  .append("text")
+  .attr("transform", "translate("+ (980/2) +","+(430-(10/3))+")")
+  .attr("y", 6)
+  .attr("dy", ".71em")
+  .style("text-anchor", "end")
+  .text("Country");
+
+</script>
+</body>
+</html>
